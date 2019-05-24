@@ -1,6 +1,18 @@
 {
     "layers": [
         {
+            "type": "First_Dropout",
+            "dropout_in": 0
+        },
+        {
+            "type": "Conv1D",
+            "activation_function": "relu",
+            "filter_number": 4,
+            "filter_shape": 2,
+            "padding": "valid",
+            "strides": 1
+        },
+        {
             "type": "LSTM",
             "neuron_number": 168,
             "dropout_in": 0,
@@ -17,8 +29,11 @@
         {
             "type": "Dense",
             "neuron_number": 10,
-            "activation_function": "linear",
-            "dropout_out": 0
+            "activation_function": "linear"
+        },
+        {
+            "type": "Output_Dense",
+            "activation_function": "linear"
         }
     ]
 }
