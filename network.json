@@ -1,0 +1,24 @@
+{
+    "layers": [
+        {
+            "type": "LSTM",
+            "neuron_number": 168,
+            "dropout_in": 0,
+            "dropout_out": 0,
+            "activation_function": "tanh",
+            "return_sequences": 1
+        },
+        {
+            "type": "RNN",
+            "neuron_number": 168,
+            "activation_function": "tanh",
+            "return_sequences": 0
+        },
+        {
+            "type": "Dense",
+            "neuron_number": 10,
+            "activation_function": "linear",
+            "dropout_out": 0
+        }
+    ]
+}
