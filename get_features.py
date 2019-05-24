@@ -149,7 +149,7 @@ class GetFeatures(object):
         df.to_csv(filename, mode='a', index=False,  header=(not os.path.exists(filename)))
         print("Please see data in file: %s" % filename)
 
-    def one_volume(self, volume, backup_cmd, client='', user='', pwd=''):
+    def single_volume(self, volume, backup_cmd, client='', user='', pwd=''):
         self.volume = volume
         self.client = client
         self.user = user
@@ -197,7 +197,7 @@ class GetFeatures(object):
 
         for volume in self.volume_list.split():
             volume = self.volume_parent_dir.rstrip('/') + '/' + volume
-            self.one_volume(volume, self.backup_cmd + ' ' + volume, self.client, self.user, self.pwd)
+            self.single_volume(volume, self.backup_cmd + ' ' + volume, self.client, self.user, self.pwd)
 
 if __name__ == "__main__":
     get_features = GetFeatures()
