@@ -11,6 +11,7 @@ from keras.layers import Input, Dense, LSTM, merge
 from keras.models import Model
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM, SimpleRNN
+from keras.layers.convolutional import Conv2D, Conv1D
 from keras.models import Sequential
 from keras.optimizers import SGD, Adam, Adamax
 
@@ -93,16 +94,21 @@ def build_nn(train_x,train_y,point,layers):
     model=Sequential()
 
     for layer_number, layer in enumerate(layers):
-        if layer["type"] == "LSTM":
+        if layer["type"] == "First_Dropout":
             model.add(Dropout(layer["dropout_in"], input_shape=(time_step_cfg, input_size)))
+        elif layer["type"] == "LSTM":
             model.add(LSTM(int(layer["neuron_number"]), return_sequences=bool(layer["return_sequences"]), activation=layer["activation_function"]))  # LSTM层
             model.add(Dropout(layer["dropout_out"]))  # dropout
         elif layer["type"] == "RNN":
             model.add(SimpleRNN(int(layer["neuron_number"]), return_sequences=bool(layer["return_sequences"]), activation=layer["activation_function"]))  # RNN层
+        elif layer["type"] == "Conv1D":
+            model.add(Conv1D(filters=layer["filter_number"], kernel_size=layer["filter_shape"], strides=layer["strides"], padding=layer["padding"], activation=layer["activation_function"]))  # CNN层
+        elif layer["type"] == "Conv2D":
+            model.add(Conv2D(filters=layer["filter_number"], kernel_size=layer["filter_shape"], strides=layer["strides"], padding=layer["padding"], activation=layer["activation_function"]))  # CNN层
         elif layer["type"] == "Dense":
-            model.add(Dense(int(layer["neuron_number"]), activation=layer["activation_function"]))
-            model.add(Dropout(layer["dropout_out"]))
-            model.add(Dense(output_size, activation=layer["activation_function"]))
+            model.add(Dense(int(layer["neuron_number"]), activation=layer["activation_function"])) # 连接
+        elif layer["type"] == "Output_Dense":
+            model.add(Dense(output_size, activation=layer["activation_function"])) # 输出
 
     if op == 1.1:
         model.compile(loss='mean_squared_error', optimizer='adam')
