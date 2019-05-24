@@ -10,7 +10,7 @@ from sklearn.preprocessing import scale
 from keras.layers import Input, Dense, LSTM, merge
 from keras.models import Model
 from keras.layers.core import Dense, Activation, Dropout
-from keras.layers.recurrent import LSTM
+from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.models import Sequential
 from keras.optimizers import SGD, Adam, Adamax
 
@@ -89,21 +89,21 @@ if mm_customize == 1:
 
 #——————————————————通过keras定义神经网络——————————————————
 #——————————————————构建神经网络——————————————————
-def build_nn(train_x,train_y,point):
+def build_nn(train_x,train_y,point,layers):
     model=Sequential()
-    if train_method==0: #训练方法0，默认
-        model.add(Dropout(dropout_in, input_shape=(time_step_cfg, input_size))) #第一层dropout
-        if rnn_number > 1:
-            for i in range(rnn_number-2):
-                model.add(LSTM(rnn_unit,return_sequences=True,activation='tanh')) #LSTM层
-                model.add(Dropout(dropout_out))  #dropout
-        model.add(LSTM(rnn_unit, return_sequences=False, activation='tanh'))  # LSTM层
-        model.add(Dropout(dropout_out)) #dropout
-        if dense_number > 1:
-            for i in range(dense_number-2):
-                model.add(Dense(time_step_cfg*(dense_number-i), activation='linear')) #Dense层
-                model.add(Dropout(dropout_out))  # dropout
-        model.add(Dense(output_size, activation='linear'))  # Dense层
+
+    for layer_number, layer in enumerate(layers):
+        if layer["type"] == "LSTM":
+            model.add(Dropout(layer["dropout_in"], input_shape=(time_step_cfg, input_size)))
+            model.add(LSTM(int(layer["neuron_number"]), return_sequences=bool(layer["return_sequences"]), activation=layer["activation_function"]))  # LSTM层
+            model.add(Dropout(layer["dropout_out"]))  # dropout
+        elif layer["type"] == "RNN":
+            model.add(SimpleRNN(int(layer["neuron_number"]), return_sequences=bool(layer["return_sequences"]), activation=layer["activation_function"]))  # RNN层
+        elif layer["type"] == "Dense":
+            model.add(Dense(int(layer["neuron_number"]), activation=layer["activation_function"]))
+            model.add(Dropout(layer["dropout_out"]))
+            model.add(Dense(output_size, activation=layer["activation_function"]))
+
     if op == 1.1:
         model.compile(loss='mean_squared_error', optimizer='adam')
     if op == 1.2:
@@ -117,6 +117,7 @@ def build_nn(train_x,train_y,point):
         sgd = SGD(lr=lr0, decay=1e-6, momentum=0.9, nesterov=True)
         model.compile(loss='mean_absolute_percentage_error', optimizer=sgd)
     history = model.fit(train_x, train_y, epochs=iterations, batch_size=batch_size_cfg, verbose=2, validation_split=val_rate)
+
     if point < 3:
         model.save_weights("model\\trend\\"+str(train_method)+"_"+str(op)+"_"+model_output+"_T"+str(time_step_cfg)+"_label_"+str(label)+"_N"+str(nor_method)+"_"+"P"+str(point)+"_weights.h5") #保存weights
         model.save("model\\trend\\"+str(train_method)+"_"+str(op)+"_"+model_output+"_T"+str(time_step_cfg)+"_label_"+str(label)+"_N"+str(nor_method)+"_"+"P"+str(point)+"_model.h5") #保存模型
