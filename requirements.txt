@@ -1,0 +1,8 @@
+numpy
+pandas
+tensorflow
+keras
+matplotlib
+sklearn
+fire
+paramiko
