@@ -3,6 +3,9 @@
 import numpy as np
 import pandas as pd
 import neural_network
+import json
+import sys
+
 
 
 #——————————————————读入参数——————————————————
@@ -72,7 +75,6 @@ def get_train_data():
     # 结束
     return train_x,train_y
 
-
 #————————————————训练————————————————————
 def train_nn():
     # 打印信息0
@@ -92,7 +94,9 @@ def train_nn():
     # 结束
     # 训练
     train_x,train_y=get_train_data() #获取训练数据
-    neural_network.build_nn(train_x,train_y,9) #开始训练
+    with open("network.json") as file:
+        config = json.load(file)
+    neural_network.build_nn(train_x,train_y,9,config["layers"]) #开始训练
     # 结束
     # 打印信息3
     print("### The train has been finished: ###") #打印结果
