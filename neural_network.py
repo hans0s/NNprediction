@@ -14,6 +14,8 @@ from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers.convolutional import Conv2D, Conv1D
 from keras.models import Sequential
 from keras.optimizers import SGD, Adam, Adamax
+from keras.callbacks import ReduceLROnPlateau
+import json
 
 #——————————————————读取自动开关——————————————————
 f_sw = open("auto_cfg\\auto_switch.txt", "r")
@@ -42,10 +44,6 @@ config.read("data\\"+config_file) #读取输入的配置文件
 print("Config file:",config_file,"has been loaded.")
 
 #——————————————————参数赋值——————————————————
-rnn_unit=config.getint('rnn','rnn_unit') #RNN神经元数量
-dropout_in=config.getfloat('rnn','dropout_in') #dropout_in比率
-dropout_out=config.getfloat('rnn','dropout_out') #dropout_out比率
-iterations=config.getint('rnn','iterations') #迭代次数
 train_file=config.get('file','train_file') #训练文件
 train_begin_cfg=config.getint('data','train_begin') #训练开始点
 train_end_cfg=config.getint('data','train_end') #训练结束点
@@ -55,26 +53,25 @@ test_end=config.getint('data','test_end') #测试结束点
 input_size=config.getint('data','input_size') #输入长度
 output_size=config.getint('other','output_size') #输出长度
 time_step_cfg=config.getint('data','time_step') #时间长度
-batch_size_cfg=config.getint('rnn','batch_size') #训练分批大小
 label=config.getint('data','label') #Y值编号
 train_method=0
 pred_method=config.getint('other','pred_method') #测试方法编号
 model_output=config.get('file','model_output') #输出模型的编号
 model_input=config.get('file','model_input') #输入模型的编号
 random=config.getint('other','random')
-rnn_number=config.getint('rnn','rnn_number')
-dense_number=config.getint('rnn','dense_number')
 pred_len=5
 nor_shift_len=config.getint('nor','nor_shift_len')
-lr0=config.getfloat('rnn','lr')
-op=config.getfloat('rnn','op')
 nor_method=config.getint('nor','nor_method')
 nor_len_set=config.getint('nor','nor_len_set')
 nor_method_plus=config.getint('nor','nor_method_plus')
-val_rate=config.getfloat('rnn','val_rate')
 index_size=config.getint('data','index_size')
 nextdays=config.getint('data','nextdays')
 mm_customize=config.getint('nor','mm_customize')
+
+with open("network.json") as file:  # 读取network文件
+    config_nw = json.load(file)
+op=config_nw["compile"]["optimizer"]
+batch_size_cfg=int(config_nw["train"]["batch_size"]) #训练分批大小
 
 #——————————————————最大最小标准化自定义参数选项——————————————————
 mm_data = []
@@ -90,10 +87,10 @@ if mm_customize == 1:
 
 #——————————————————通过keras定义神经网络——————————————————
 #——————————————————构建神经网络——————————————————
-def build_nn(train_x,train_y,point,layers):
+def build_nn(train_x,train_y,point,config):
     model=Sequential()
 
-    for layer_number, layer in enumerate(layers):
+    for layer_number, layer in enumerate(config["layers"]):
         if layer["type"] == "First_Dropout":
             model.add(Dropout(layer["dropout_in"], input_shape=(time_step_cfg, input_size)))
         elif layer["type"] == "LSTM":
@@ -110,19 +107,18 @@ def build_nn(train_x,train_y,point,layers):
         elif layer["type"] == "Output_Dense":
             model.add(Dense(output_size, activation=layer["activation_function"])) # 输出
 
-    if op == 1.1:
-        model.compile(loss='mean_squared_error', optimizer='adam')
-    if op == 1.2:
-        adam = Adam(lr=lr0, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-        model.compile(loss='mean_absolute_percentage_error', optimizer=adam)
-    if op == 1.3:
-        model.compile(loss='mean_absolute_percentage_error', optimizer='adamax')
-    if op == 2.1:
-        model.compile(loss='mean_squared_error', optimizer='sgd')
-    if op == 2.2:
-        sgd = SGD(lr=lr0, decay=1e-6, momentum=0.9, nesterov=True)
-        model.compile(loss='mean_absolute_percentage_error', optimizer=sgd)
-    history = model.fit(train_x, train_y, epochs=iterations, batch_size=batch_size_cfg, verbose=2, validation_split=val_rate)
+    model.compile(loss=config["compile"]["loss_function"], optimizer=config["compile"]["optimizer"],
+                  metrics=[config["compile"]["metrics"]])
+
+    callback_list = [
+        ReduceLROnPlateau(monitor='val_loss',  # 监控模型的验证损失
+                          factor=0.1,  # 触发时将学习率除以10
+                          patience=10)  # 如果验证损失在10轮内都没有改善，那么就触发这个回调函数
+    ]
+
+    history = model.fit(train_x, train_y, epochs=int(config["train"]["epochs"]),
+                        batch_size=config["train"]["batch_size"], verbose=int(config["train"]["verbose"]),
+                        validation_split=float(config["train"]["validation_split"]), callbacks=callback_list)
 
     if point < 3:
         model.save_weights("model\\trend\\"+str(train_method)+"_"+str(op)+"_"+model_output+"_T"+str(time_step_cfg)+"_label_"+str(label)+"_N"+str(nor_method)+"_"+"P"+str(point)+"_weights.h5") #保存weights
@@ -132,15 +128,15 @@ def build_nn(train_x,train_y,point,layers):
         model.save("model\\"+str(train_method)+"_"+str(op)+"_"+model_output+"_T"+str(time_step_cfg)+"_label_"+str(label)+"_N"+str(nor_method)+"_model.h5") #保存模型
     #打印loss和acc
     print("loss:",history.history['loss'])
-    if val_rate >0:
+    if float(config["train"]["validation_split"]) >0:
         print("val_loss:",history.history['val_loss'])
     #图形表示
     loss = history.history['loss']
-    if val_rate >0:
+    if float(config["train"]["validation_split"]) >0:
         val_loss = history.history['val_loss']
     plt.figure()
     plt.plot(loss[5:])
-    if val_rate >0:
+    if float(config["train"]["validation_split"]) >0:
         plt.plot(val_loss[5:])
     plt.title('train vs validation loss')
     plt.ylabel('loss')
