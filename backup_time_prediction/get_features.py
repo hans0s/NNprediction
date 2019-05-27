@@ -6,15 +6,17 @@ import paramiko
 import subprocess
 import re
 from pandas import DataFrame
+import socket
 
 warnings.filterwarnings("ignore")
 
-filename = 'features.csv'
+filename = os.path.dirname(os.path.realpath(__file__)) + '/features.csv'
 
+fs_type_map ={'ext2': 1, 'ext3': 2, 'ext4': '3'}
 
 def decorate_for_function_name(func):
     def func_wrapper(self):
-        print("================%s============" % func.__name__)
+        print("[*****%s*****]" % func.__name__)
         return func(self)
     return func_wrapper
 
@@ -51,15 +53,16 @@ class GetFeatures(object):
 
     @decorate_for_function_name
     def get_volume_size(self):
-        self.volume_size = self.run_cmd("df -Th %s | grep %s | awk -F' ' '{print $3}'" % (self.volume, self.volume.strip('/')))
+        self.volume_size = self.run_cmd("df -T %s | grep %s | awk -F' ' '{print $3}'" % (self.volume, self.volume.strip('/')))
 
     @decorate_for_function_name
     def get_volume_used_size(self):
-        self.volume_used_size = self.run_cmd("df -Th %s | grep %s | awk -F' ' '{print $4}'" % (self.volume, self.volume.strip('/')))
+        self.volume_used_size = self.run_cmd("df -T %s | grep %s | awk -F' ' '{print $4}'" % (self.volume, self.volume.strip('/')))
 
     @decorate_for_function_name
     def get_fs_type(self):
-        self.fs_type = self.run_cmd("df -Th %s | grep %s | awk -F' ' '{print $2}'" % (self.volume, self.volume.strip('/')))
+        self.fs_type = self.run_cmd("df -T %s | grep %s | awk -F' ' '{print $2}'" % (self.volume, self.volume.strip('/')))
+        self.fs_type = fs_type_map[self.fs_type]
 
     @decorate_for_function_name
     def get_file_count(self):
@@ -71,19 +74,19 @@ class GetFeatures(object):
 
     @decorate_for_function_name
     def get_total_memory(self):
-        self.total_memory = self.run_cmd("free -h | grep Mem | awk -F' ' '{print $2}'")
+        self.total_memory = self.run_cmd("free | grep Mem | awk -F' ' '{print $2}'")
 
     @decorate_for_function_name
     def get_free_memory(self):
-        self.free_memory = self.run_cmd("free -h | grep Mem | awk -F' ' '{print $4}'")
+        self.free_memory = self.run_cmd("free | grep Mem | awk -F' ' '{print $4}'")
 
     @decorate_for_function_name
     def get_shared_memory(self):
-        self.shared_memory = self.run_cmd("free -h | grep Mem | awk -F' ' '{print $5}'")
+        self.shared_memory = self.run_cmd("free | grep Mem | awk -F' ' '{print $5}'")
 
     @decorate_for_function_name
     def get_cached_memory(self):
-        self.cached_memory = self.run_cmd("free -h | grep Mem | awk -F' ' '{print $6}'")
+        self.cached_memory = self.run_cmd("free | grep Mem | awk -F' ' '{print $6}'")
 
     @decorate_for_function_name
     def get_cpu_count(self):
@@ -122,11 +125,17 @@ class GetFeatures(object):
 
     @decorate_for_function_name
     def get_volume_list(self):
-        self.volume_list = self.run_cmd("ls %s" % self.volume_parent_dir)
+        self.volume_list = self.run_cmd("ls -d %s/*" % self.volume_parent_dir)
 
     @decorate_for_function_name
     def export_data(self):
-        features = {'volume_size': [self.volume_size],
+        if not self.client or self.client == 'localhost':
+            client = socket.gethostbyname(socket.gethostname())
+        else:
+            client = self.client
+        features = {'client': client,
+                    'volume': self.volume,
+                    'volume_size': self.volume_size,
                     'volume_used_size': self.volume_used_size,
                     'fs_type': self.fs_type,
                     'file_count': self.file_count,
@@ -138,16 +147,20 @@ class GetFeatures(object):
                     'average_cpu_usage_on_previous_one_minute': self.average_cpu_usage_on_previous_one_minute,
                     'average_cpu_usage_on_previous_five_minute': self.average_cpu_usage_on_previous_five_minute,
                     'average_cpu_usage_on_previous_fifteen_minute': self.average_cpu_usage_on_previous_fifteen_minute,
-                    'num_extents': self.num_extents,
-                    'num_bytes_read': self.num_bytes_read,
-                    'num_bytes_write': self.num_bytes_write,
-                    'square_sum_head_move': self.square_sum_head_move,
-                    'square_sum_read': self.square_sum_read,
-                    'backup_elapsed_time': self.backup_elapsed_time
+                    'num_extents': self.num_extents.strip(),
+                    'num_bytes_read': self.num_bytes_read.strip(),
+                    'num_bytes_write': self.num_bytes_write.strip(),
+                    'square_sum_head_move': self.square_sum_head_move.strip(),
+                    'square_sum_read': self.square_sum_read.strip(),
+                    'backup_elapsed_time': self.backup_elapsed_time.strip()
                     }
         df = DataFrame(features, index=[0])
         df.to_csv(filename, mode='a', index=False,  header=(not os.path.exists(filename)))
         print("Please see data in file: %s" % filename)
+
+    @decorate_for_function_name
+    def update_volume_data(self):
+        self.run_cmd("python2 vh.py change")
 
     def single_volume(self, volume, backup_cmd, client='', user='', pwd=''):
         self.volume = volume
@@ -166,6 +179,8 @@ class GetFeatures(object):
         print("backup_cmd: " + self.backup_cmd)
         print("")
         self.get_volume_size()
+        if not self.volume_size:
+            return
         self.get_volume_used_size()
         self.get_fs_type()
         self.get_file_count()
@@ -180,24 +195,29 @@ class GetFeatures(object):
         self.get_extents_and_backup_time()
         self.export_data()
 
-    def multi_volume(self, volume_parent_dir, backup_cmd, client='', user='', pwd=''):
-        self.volume_parent_dir = volume_parent_dir
+    def multi_volume(self, loop_count, volume_parent_dir, backup_cmd, client='', user='', pwd=''):
+        self.loop_count = loop_count
+        self.volume_parent_dir = volume_parent_dir.rstrip('/')
         self.client = client
         self.user = user
         self.pwd = pwd
-        self.backup_cmd = backup_cmd
 
         print("client: " + self.client)
         print("username: " + self.user)
         print("password: " + self.pwd)
         print("volume_parent_dir: " + self.volume_parent_dir)
-        print("backup_cmd: " + self.backup_cmd)
+        print("backup_cmd: " + backup_cmd)
         print("")
-        self.get_volume_list()
 
-        for volume in self.volume_list.split():
-            volume = self.volume_parent_dir.rstrip('/') + '/' + volume
-            self.single_volume(volume, self.backup_cmd + ' ' + volume, self.client, self.user, self.pwd)
+        for i in range(loop_count):
+            self.update_volume_data()
+            self.get_volume_list()
+
+            volume_list = self.volume_list.split()
+            for volume in volume_list:
+                if volume:
+                    self.single_volume(volume, backup_cmd + ' ' + volume, self.client, self.user, self.pwd)
+                    self.single_volume(volume, backup_cmd + ' -l incr ' + volume, self.client, self.user, self.pwd)
 
 if __name__ == "__main__":
     get_features = GetFeatures()
