@@ -35,5 +35,16 @@
             "type": "Output_Dense",
             "activation_function": "linear"
         }
-    ]
+    ],
+    "compile": {
+        "loss_function": "mean_squared_error",
+        "optimizer": "adamax",
+        "metrics": "accuracy"
+    },
+    "train": {
+        "batch_size": 60,
+        "verbose": 2,
+        "validation_split": 0.1,
+        "epochs": 250
+    }
 }
