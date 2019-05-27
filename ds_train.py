@@ -96,7 +96,7 @@ def train_nn():
     train_x,train_y=get_train_data() #获取训练数据
     with open("network.json") as file:
         config = json.load(file)
-    neural_network.build_nn(train_x,train_y,9,config["layers"]) #开始训练
+    neural_network.build_nn(train_x,train_y,9,config) #开始训练
     # 结束
     # 打印信息3
     print("### The train has been finished: ###") #打印结果
