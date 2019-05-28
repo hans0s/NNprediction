@@ -34,6 +34,11 @@ def create():
 
 def change(targets=config.CHANGE_FILES_TARGET):
     for volume, target_kwargs in targets.items():
+        volume_info = volume_utils.get_volume_status(volume)
+        if volume_info["used_percent"] > 99:
+            logger.warn("The volume %s usage is more than 99%. Only perform the delete operation..." % volume)
+            target_kwargs["c"] = 0
+            target_kwargs["u"] = 0
         volume_utils.change_files(file_dir=volume, **target_kwargs)
 
 
