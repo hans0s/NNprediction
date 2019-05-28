@@ -209,7 +209,8 @@ class GetFeatures(object):
         print("backup_cmd: " + backup_cmd)
         print("")
 
-        for i in range(loop_count):
+        for i in range(int(self.loop_count)):
+            print("loop: %s" % i)
             self.update_volume_data()
             self.get_volume_list()
 
