@@ -23,7 +23,7 @@ def fill(targets=config.VOLUMES_FILL_TARGET):
 
 
 def create():
-    do = input('You are creating new volumes via your configuration. Are you sure this operation:(yes/[no]) ')
+    do = raw_input('You are creating new volumes via your configuration. Are you sure this operation:(yes/[no]) ')
     if do == "yes":
         create_volumes(volumes=config.EXT3_VOLUMES, fs="ext3")
         create_volumes(volumes=config.EXT4_VOLUMES, fs="ext4")
