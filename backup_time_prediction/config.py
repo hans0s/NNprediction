@@ -20,8 +20,8 @@ EXT4_VOLUMES = {
     "/lvm/fsa-100G-ext4": "100G",
 }
 
-VOLUMES_FILL_TARGET = {
-    "/lvm/fsa-1G-ext3": 95,
+VOLUMES_FILL_TARGET = {  # Specify the target percentage need to fill of the volume size
+    "/lvm/fsa-1G-ext3": 65,
     "/lvm/fsa-2G-ext3": 50,
     "/lvm/fsa-5G-ext3": 50,
     "/lvm/fsa-10G-ext3": 50,
@@ -39,19 +39,19 @@ VOLUMES_FILL_TARGET = {
 }
 
 CHANGE_FILES_TARGET = {  # Specify changed files count, change rate for each file, and block size
-    "/lvm/fsa-1G-ext3": {"count": 10, "cr": 0.1, "bsk": 1},
-    "/lvm/fsa-2G-ext3": {"count": 10, "cr": 0.1, "bsk": 1},
-    "/lvm/fsa-5G-ext3": {"count": 100, "cr": 0.05},
-    "/lvm/fsa-10G-ext3": {"count": 100, "cr": 0.05, "bsk": 100},
-    "/lvm/fsa-20G-ext3": {"count": 200, "cr": 0.02, "bsk": 100},
-    "/lvm/fsa-50G-ext3": {"count": 200, "cr": 0.02, "bsk": 100},
-    "/lvm/fsa-100G-ext3": {"count": 500, "cr": 0.01, "bsk": 1000},
+    "/lvm/fsa-1G-ext3": {"u": 10, "c": 15, "d": 10, "cr": 0.05, "bsk": 1},
+    "/lvm/fsa-2G-ext3": {"u": 10, "c": 15, "d": 10, "cr": 0.05, "bsk": 1},
+    "/lvm/fsa-5G-ext3": {"u": 10, "c": 15, "d": 10, "cr": 0.05, "bsk": 1},
+    "/lvm/fsa-10G-ext3": {"u": 20, "c": 30, "d": 10, "cr": 0.01, "bsk": 1},
+    "/lvm/fsa-20G-ext3": {"u": 20, "c": 30, "d": 10, "cr": 0.01, "bsk": 1},
+    "/lvm/fsa-50G-ext3": {"u": 40, "c": 50, "d": 20, "cr": 0.005, "bsk": 1},
+    "/lvm/fsa-100G-ext3": {"u": 40, "c": 50, "d": 20, "cr": 0.003, "bsk": 1},
 
-    "/lvm/fsa-1G-ext4": {"count": 10, "cr": 0.1, "bsk": 1},
-    "/lvm/fsa-2G-ext4": {"count": 50, "cr": 0.1, "bsk": 1},
-    "/lvm/fsa-5G-ext4": {"count": 100, "cr": 0.05},
-    "/lvm/fsa-10G-ext4": {"count": 100, "cr": 0.05, "bsk": 100},
-    "/lvm/fsa-20G-ext4": {"count": 200, "cr": 0.02, "bsk": 100},
-    "/lvm/fsa-50G-ext4": {"count": 200, "cr": 0.02, "bsk": 100},
-    "/lvm/fsa-100G-ext4": {"count": 500, "cr": 0.01, "bsk": 1000},
+    "/lvm/fsa-1G-ext4": {"u": 10, "c": 15, "d": 10, "cr": 0.05, "bsk": 1},
+    "/lvm/fsa-2G-ext4": {"u": 10, "c": 15, "d": 10, "cr": 0.04, "bsk": 1},
+    "/lvm/fsa-5G-ext4": {"u": 15, "c": 30, "d": 10, "cr": 0.03, "bsk": 1},
+    "/lvm/fsa-10G-ext4": {"u": 20, "c": 50, "d": 10, "cr": 0.02, "bsk": 1},
+    "/lvm/fsa-20G-ext4": {"u": 20, "c": 50, "d": 10, "cr": 0.01, "bsk": 1},
+    "/lvm/fsa-50G-ext4": {"u": 30, "c": 100, "d": 10, "cr": 0.005, "bsk": 1},
+    "/lvm/fsa-100G-ext4": {"u": 30, "c": 100, "d": 10, "cr": 0.003, "bsk": 1},
 }
