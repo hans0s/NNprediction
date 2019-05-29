@@ -22,6 +22,7 @@ nor_method=neural_network.nor_method
 op=neural_network.op
 mm_customize=neural_network.mm_customize
 index_size=neural_network.index_size
+y_normalization_or_not=neural_network.y_nor
 
 
 #——————————————————方法：获取训练集——————————————————————
@@ -60,12 +61,18 @@ def get_train_data():
         if random == 1: #打乱数据顺序
             np.random.shuffle(train_xy)
         train_x=train_xy[:,:,:input_size] #训练集X，滚动取值
-        train_y0 = train_xy[:, :, input_size + label]
-        print("Len of train_y0:",len(train_y0))
-        print("train_y0's sharp:",np.shape(train_y0))
-        train_y = train_y0[:,time_step-1] #训练集Y，连续取值
-        print("Len of train_y:",len(train_y))
-        print("train_y's sharp:",np.shape(train_y))
+        if y_normalization_or_not == 1:
+            train_y0 = train_xy[:, :, input_size + label]
+            print("Len of train_y0:",len(train_y0))
+            print("train_y0's sharp:",np.shape(train_y0))
+            train_y = train_y0[:,time_step-1] #训练集Y，连续取值
+            print("Len of train_y:",len(train_y))
+            print("train_y's sharp:",np.shape(train_y))
+        if y_normalization_or_not == 0:
+            train_y = data_train[time_step-1:, input_size + label]
+            print("Len of train_y:",len(train_y))
+            print("train_y's sharp:",np.shape(train_y))
+            print(train_y[:10])
     # 打印信息2
     print("The len of final train data x:",len(train_x))
     print("The len of final train data y:",len(train_y))
