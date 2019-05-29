@@ -67,6 +67,7 @@ nor_method_plus=config.getint('nor','nor_method_plus')
 index_size=config.getint('data','index_size')
 nextdays=config.getint('data','nextdays')
 mm_customize=config.getint('nor','mm_customize')
+y_nor=config.getint('nor','y_nor')
 
 with open("network.json") as file:  # 读取network文件
     config_nw = json.load(file)
@@ -112,8 +113,8 @@ def build_nn(train_x,train_y,point,config):
 
     callback_list = [
         ReduceLROnPlateau(monitor='val_loss',  # 监控模型的验证损失
-                          factor=0.1,  # 触发时将学习率除以10
-                          patience=10)  # 如果验证损失在10轮内都没有改善，那么就触发这个回调函数
+                          factor=0.5,  # 触发时将学习率除以10
+                          patience=50)  # 如果验证损失在10轮内都没有改善，那么就触发这个回调函数
     ]
 
     history = model.fit(train_x, train_y, epochs=int(config["train"]["epochs"]),

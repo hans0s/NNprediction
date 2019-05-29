@@ -7,7 +7,7 @@
         {
             "type": "Conv1D",
             "activation_function": "relu",
-            "filter_number": 4,
+            "filter_number": 168,
             "filter_shape": 2,
             "padding": "valid",
             "strides": 1
@@ -45,6 +45,6 @@
         "batch_size": 60,
         "verbose": 2,
         "validation_split": 0.1,
-        "epochs": 250
+        "epochs": 1000
     }
 }

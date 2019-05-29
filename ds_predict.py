@@ -28,8 +28,8 @@ op=neural_network.op
 nor_method_plus=neural_network.nor_method_plus
 mm_customize=neural_network.mm_customize
 index_size=neural_network.index_size
-birthday=0 #选1：输出的预测P 不做反标准化
 nextdays=neural_network.nextdays #Y是几天以后的值
+y_normalization_or_not=neural_network.y_nor
 
 #——————————————————菜单 - 选择 预测方法 和 交易策略——————————————————
 if neural_network.auto_switch == 0:
@@ -288,28 +288,27 @@ def predict(trade):
             if pred_method == 4:  #测试方法0
                 test_predict.extend(predict)
 #——————————--- 预测值 反标准化
-    if nor_method == 0:
-        if nor_method_plus == 0:
-            test_predict=np.array(test_predict)*std_y+mean_y #预测Y反标准化
-        if nor_method_plus == 1 and birthday != 1:
-            test_predict_final = []
-            for i in range(len(test_predict)):
-                test_predict_f0 = test_predict[i] * std_y[i] + mean_y[i]
-                test_predict_final.append(test_predict_f0)
-            test_predict = np.array(test_predict_final)
-        if nor_method_plus == 1 and birthday == 1:
-            test_predict = np.array(test_predict)
-    if nor_method == 1:
-        if nor_method_plus == 0:
-            test_predict = (np.array(test_predict) * (std_y - mean_y)) + mean_y
-        if nor_method_plus == 1 and birthday != 1:
-            test_predict_final = []
-            for i in range(len(test_predict)):
-                test_predict_f0 = test_predict[i] * (std_y[i] - mean_y[i]) + mean_y[i]
-                test_predict_final.append(test_predict_f0)
-            test_predict = np.array(test_predict_final)
-        if nor_method_plus == 1 and birthday == 1:
-            test_predict = np.array(test_predict)
+    if y_normalization_or_not != 0:
+        if nor_method == 0:
+            if nor_method_plus == 0:
+                test_predict=np.array(test_predict)*std_y+mean_y #预测Y反标准化
+            if nor_method_plus == 1:
+                test_predict_final = []
+                for i in range(len(test_predict)):
+                    test_predict_f0 = test_predict[i] * std_y[i] + mean_y[i]
+                    test_predict_final.append(test_predict_f0)
+                test_predict = np.array(test_predict_final)
+        if nor_method == 1:
+            if nor_method_plus == 0:
+                test_predict = (np.array(test_predict) * (std_y - mean_y)) + mean_y
+            if nor_method_plus == 1:
+                test_predict_final = []
+                for i in range(len(test_predict)):
+                    test_predict_f0 = test_predict[i] * (std_y[i] - mean_y[i]) + mean_y[i]
+                    test_predict_final.append(test_predict_f0)
+                test_predict = np.array(test_predict_final)
+    else:
+        test_predict = np.array(test_predict)
 #——————————--- 打印debug信息
     print("Debug information #2:")
     print("The len of prediction list:",len(test_predict))
